@@ -23,6 +23,19 @@
 
             <!-- ============ Signal Rail shared styles ============ -->
 
+            <!-- Keyboard focus cue: subtle dashed outline, visible only for keyboard users -->
+            <Style x:Key="FocusVisual">
+                <Setter Property="Control.Template">
+                    <Setter.Value>
+                        <ControlTemplate>
+                            <Rectangle Margin="-3" StrokeThickness="1"
+                                       Stroke="{DynamicResource StrongBorderColor}"
+                                       StrokeDashArray="2 2" SnapsToDevicePixels="true"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <Style x:Key="BaseText" TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{DynamicResource ForegroundColor}"/>
                 <Setter Property="FontFamily" Value="Segoe UI"/>
@@ -43,7 +56,7 @@
                 <Setter Property="Padding" Value="16,7"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
@@ -77,7 +90,7 @@
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource BorderColor}"/>
                 <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
@@ -117,7 +130,7 @@
                 <Setter Property="FontSize" Value="13"/>
                 <Setter Property="Padding" Value="10,6"/>
                 <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
@@ -146,14 +159,19 @@
                 <Setter Property="FontFamily" Value="Segoe UI"/>
                 <Setter Property="FontSize" Value="13"/>
                 <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="RadioButton">
-                            <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="4"
-                                    Padding="12,8" Margin="8,1">
-                                <ContentPresenter VerticalAlignment="Center"/>
-                            </Border>
+                            <Grid Margin="8,1">
+                                <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="4"
+                                        Padding="12,8">
+                                    <ContentPresenter VerticalAlignment="Center"/>
+                                </Border>
+                                <Rectangle x:Name="rail" Width="3" RadiusX="1.5" RadiusY="1.5"
+                                           HorizontalAlignment="Left" Fill="{DynamicResource AccentColor}"
+                                           Visibility="Collapsed"/>
+                            </Grid>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter TargetName="bd" Property="Background" Value="{DynamicResource RowHoverBackground}"/>
@@ -162,6 +180,7 @@
                                 <Trigger Property="IsChecked" Value="True">
                                     <Setter TargetName="bd" Property="Background" Value="{DynamicResource RowSelectedBackground}"/>
                                     <Setter Property="Foreground" Value="{DynamicResource AccentMutedText}"/>
+                                    <Setter TargetName="rail" Property="Visibility" Value="Visible"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -310,7 +329,7 @@
             <!-- Checkbox (row selection) -->
             <Style x:Key="RowCheck" TargetType="CheckBox">
                 <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="CheckBox">

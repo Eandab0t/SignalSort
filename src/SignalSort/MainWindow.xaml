@@ -1,13 +1,22 @@
 <Window x:Class="SignalSort.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:models="clr-namespace:SignalSort.Models"
         Title="SignalSort"
         Height="800" Width="1360" MinHeight="600" MinWidth="1000"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None" ResizeMode="CanResize"
-        AllowsTransparency="True" Background="Transparent"
+        Background="{DynamicResource BackgroundColor}"
         AllowDrop="True" Drop="Window_Drop" DragOver="Window_DragOver">
+
+    <WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            ResizeBorderThickness="7"
+                            GlassFrameThickness="0"
+                            CornerRadius="0"
+                            UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
 
     <Window.DataContext>
         <viewmodels:MainViewModel xmlns:viewmodels="clr-namespace:SignalSort.ViewModels"/>
@@ -16,7 +25,8 @@
     <Window.Resources>
         <!-- Category badge color mapping -->
         <DataTemplate x:Key="CategoryBadge">
-            <Border CornerRadius="3" Padding="7,3" Margin="0,0,8,0"
+            <Border CornerRadius="3" Padding="7,3" Margin="0,0,8,0" MinWidth="76"
+                    HorizontalAlignment="Left"
                     Background="{DynamicResource BadgeDocumentBackground}">
                 <Border.Style>
                     <Style TargetType="Border">
@@ -70,80 +80,91 @@
 
         <!-- File row -->
         <DataTemplate x:Key="FileRow" DataType="{x:Type models:FileClassification}">
-            <Border x:Name="rowBd" Padding="12,8" BorderThickness="0,0,0,1"
+            <Border x:Name="rowBd" Padding="0" BorderThickness="0,0,0,1"
                     BorderBrush="{DynamicResource BorderColor}" Background="Transparent">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="3"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <CheckBox Grid.Column="0" Style="{StaticResource RowCheck}"
-                              IsChecked="{Binding IsSelected}" VerticalAlignment="Center"
-                              Margin="0,0,12,0"/>
+                    <!-- Selection rail: echoes the logo's purple bar -->
+                    <Rectangle x:Name="selRail" Grid.Column="0" Fill="{DynamicResource AccentColor}"
+                               Visibility="Collapsed"/>
 
-                    <ContentPresenter Grid.Column="1" ContentTemplate="{StaticResource CategoryBadge}"
-                                      Content="{Binding}" VerticalAlignment="Center"/>
+                    <Grid Grid.Column="1" Margin="12,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                    <!-- Original name + signals -->
-                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="4,0,12,0">
-                        <TextBlock Text="{Binding OriginalName}" FontFamily="Segoe UI" FontSize="13"
-                                   Foreground="{DynamicResource ForegroundColor}"
-                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding FullPath}"/>
-                        <TextBlock FontFamily="Segoe UI" FontSize="11" Margin="0,2,0,0"
-                                   Foreground="{DynamicResource TertiaryForeground}"
-                                   TextTrimming="CharacterEllipsis"
-                                   Text="{Binding SignalSummary, Mode=OneWay}"/>
-                    </StackPanel>
+                        <CheckBox Grid.Column="0" Style="{StaticResource RowCheck}"
+                                  IsChecked="{Binding IsSelected}" VerticalAlignment="Center"
+                                  Margin="0,0,12,0"/>
 
-                    <!-- Arrow -->
-                    <TextBlock Grid.Column="3" Text="&#xE72A;" FontFamily="Segoe MDL2 Assets"
-                               FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0"
-                               Foreground="{DynamicResource TertiaryForeground}"/>
+                        <ContentPresenter Grid.Column="1" ContentTemplate="{StaticResource CategoryBadge}"
+                                          Content="{Binding}" VerticalAlignment="Center"/>
 
-                    <!-- New name -->
-                    <StackPanel Grid.Column="4" VerticalAlignment="Center" Margin="0,0,10,0">
-                        <TextBlock Text="{Binding NewName}" FontFamily="Segoe UI" FontSize="13"
-                                   TextTrimming="CharacterEllipsis" ToolTip="{Binding NewName}">
+                        <!-- Original name + signals -->
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="4,0,12,0">
+                            <TextBlock Text="{Binding OriginalName}" FontFamily="Segoe UI" FontSize="13"
+                                       Foreground="{DynamicResource ForegroundColor}"
+                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding FullPath}"/>
+                            <TextBlock FontFamily="Segoe UI" FontSize="11" Margin="0,2,0,0"
+                                       Foreground="{DynamicResource TertiaryForeground}"
+                                       TextTrimming="CharacterEllipsis"
+                                       Text="{Binding SignalSummary, Mode=OneWay}"/>
+                        </StackPanel>
+
+                        <!-- Arrow -->
+                        <TextBlock Grid.Column="3" Text="&#xE72A;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="11" VerticalAlignment="Center" Margin="0,0,12,0"
+                                   Foreground="{DynamicResource TertiaryForeground}"/>
+
+                        <!-- New name -->
+                        <StackPanel Grid.Column="4" VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="{Binding NewName}" FontFamily="Segoe UI" FontSize="13"
+                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding NewName}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource AccentMutedText}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Tag}" Value="conflict">
+                                                <Setter Property="Foreground" Value="{DynamicResource ErrorColor}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                <TextBlock FontFamily="Segoe UI" FontSize="11" Text="{Binding Purpose}"
+                                           Foreground="{DynamicResource SecondaryForeground}"/>
+                                <TextBlock FontFamily="Segoe UI" FontSize="11" Margin="8,0,0,0"
+                                           Text="{Binding ConfidenceLabel, Mode=OneWay}"
+                                           Foreground="{DynamicResource TertiaryForeground}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Conflict marker -->
+                        <TextBlock Grid.Column="5" Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                   VerticalAlignment="Center" ToolTip="Name collision - will be skipped">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{DynamicResource AccentMutedText}"/>
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource ErrorColor}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Tag}" Value="conflict">
-                                            <Setter Property="Foreground" Value="{DynamicResource ErrorColor}"/>
+                                            <Setter Property="Visibility" Value="Visible"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                            <TextBlock FontFamily="Segoe UI" FontSize="11" Text="{Binding Purpose}"
-                                       Foreground="{DynamicResource SecondaryForeground}"/>
-                            <TextBlock FontFamily="Segoe UI" FontSize="11" Margin="8,0,0,0"
-                                       Text="{Binding ConfidenceLabel, Mode=OneWay}"
-                                       Foreground="{DynamicResource TertiaryForeground}"/>
-                        </StackPanel>
-                    </StackPanel>
-
-                    <!-- Conflict marker -->
-                    <TextBlock Grid.Column="5" Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="14"
-                               VerticalAlignment="Center" ToolTip="Name collision - will be skipped">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Setter Property="Foreground" Value="{DynamicResource ErrorColor}"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Tag}" Value="conflict">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                    </Grid>
                 </Grid>
             </Border>
             <DataTemplate.Triggers>
@@ -152,13 +173,14 @@
                 </Trigger>
                 <DataTrigger Binding="{Binding IsSelectedForInspect}" Value="True">
                     <Setter TargetName="rowBd" Property="Background" Value="{DynamicResource RowSelectedBackground}"/>
+                    <Setter TargetName="selRail" Property="Visibility" Value="Visible"/>
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
     </Window.Resources>
 
     <Border Background="{DynamicResource BackgroundColor}"
-            BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" CornerRadius="8">
+            BorderBrush="{DynamicResource BorderColor}" BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="44"/>
@@ -168,7 +190,8 @@
             </Grid.RowDefinitions>
 
             <!-- ================= Header ================= -->
-            <Grid Grid.Row="0" Background="{DynamicResource ToolbarBackground}">
+            <Grid Grid.Row="0" Background="{DynamicResource ToolbarBackground}"
+                  MouseLeftButtonDown="Header_MouseLeftButtonDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>

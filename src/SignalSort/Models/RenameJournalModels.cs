@@ -14,6 +14,9 @@ public class JournalEntry
     public string NewPath { get; set; } = "";
     public bool Succeeded { get; set; }
 
+    /// <summary>True when the moved item was a directory, not a file.</summary>
+    public bool IsDirectory { get; set; }
+
     /// <summary>Length of the file at the time of the rename (bytes).</summary>
     public long FileLength { get; set; }
 

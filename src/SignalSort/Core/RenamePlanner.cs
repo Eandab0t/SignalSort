@@ -97,6 +97,40 @@ public class RenamePlanner
             {
                 entry.Status = RenamePlanStatus.Collision;
                 entry.Note = "A file or folder with this name already exists.";
+                continue;
+            }
+
+            // A folder cannot be renamed into its own subtree.
+            if (entry.Item.Kind == ItemKind.Folder &&
+                IsStrictlyInside(entry.NewPath, entry.OldPath))
+            {
+                entry.Status = RenamePlanStatus.Cycle;
+                entry.Note = "A folder cannot be renamed into its own subfolder.";
+            }
+        }
+
+        // Pass 3.5: destinations inside a folder that is itself being renamed.
+        // If X moves into the folder's CURRENT location, the folder's own
+        // rename would afterwards move X again, leaving the journal pointing
+        // at a path that no longer matches reality. Block X; the folder
+        // rename still runs and X can be retried afterwards.
+        var folderRenames = plan.Entries
+            .Where(e => e.Status == RenamePlanStatus.Ready &&
+                        e.Item.Kind == ItemKind.Folder &&
+                        !string.Equals(e.OldPath, e.NewPath, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var entry in plan.Entries.Where(e => e.Status == RenamePlanStatus.Ready))
+        {
+            var blocked = folderRenames.Any(f =>
+                !ReferenceEquals(f, entry) &&
+                !IsStrictlyInside(entry.OldPath, f.OldPath) &&
+                IsStrictlyInside(entry.NewPath, f.OldPath));
+
+            if (blocked)
+            {
+                entry.Status = RenamePlanStatus.Collision;
+                entry.Note = "Destination is inside a folder that is also being renamed in this batch.";
             }
         }
 
@@ -127,9 +161,17 @@ public class RenamePlanner
     }
 
     /// <summary>
-    /// Re-orders Ready entries so that when one item's destination is another
-    /// item's source, the item moving *away* executes first (Kahn's algorithm).
-    /// Members of a genuine cycle are blocked with RenamePlanStatus.Cycle.
+    /// Re-orders Ready entries so that dependent renames execute in a safe
+    /// order (Kahn's algorithm). Three dependency rules:
+    ///   1. If e's destination is another entry's source, that source must
+    ///      move away first (plain chains).
+    ///   2. If e is a folder being renamed, every entry still living inside
+    ///      e's source subtree must move first - renaming the folder would
+    ///      otherwise invalidate their recorded paths.
+    ///   3. If e's destination is inside a folder that is itself being
+    ///      renamed, that folder must be renamed first so the destination
+    ///      path is final when e executes.
+    /// Entries left unordered form genuine cycles and are blocked.
     /// </summary>
     private static void OrderAndDetectCycles(RenamePlan plan)
     {
@@ -142,11 +184,8 @@ public class RenamePlanner
 
         while (remaining.Count > 0)
         {
-            // Free = its destination is not the source of any remaining entry.
             var free = remaining
-                .Where(e => !remaining.Any(o =>
-                    !ReferenceEquals(o, e) &&
-                    string.Equals(o.OldPath, e.NewPath, StringComparison.OrdinalIgnoreCase)))
+                .Where(e => !remaining.Any(o => !ReferenceEquals(o, e) && Blocks(o, e)))
                 .ToList();
 
             if (free.Count == 0)
@@ -170,5 +209,49 @@ public class RenamePlanner
         plan.Entries.Clear();
         plan.Entries.AddRange(ordered);
         plan.Entries.AddRange(others);
+    }
+
+    /// <summary>
+    /// True when o must execute before e can safely run.
+    /// </summary>
+    private static bool Blocks(RenamePlanEntry o, RenamePlanEntry e)
+    {
+        // 1. Chain: e's destination is o's source; o must vacate it first.
+        if (string.Equals(o.OldPath, e.NewPath, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // 2. e is a folder being renamed and o still lives inside e's source
+        //    subtree: o must move (or be excluded) before e's rename, otherwise
+        //    e's rename would invalidate o's recorded source path.
+        if (e.Item.Kind == ItemKind.Folder &&
+            !string.Equals(e.OldPath, e.NewPath, StringComparison.OrdinalIgnoreCase) &&
+            IsStrictlyInside(o.OldPath, e.OldPath))
+            return true;
+
+        // 3. e's destination sits inside the folder o is renaming into; the
+        //    folder must reach its final location before e can target it.
+        if (o.Item.Kind == ItemKind.Folder &&
+            !string.Equals(o.OldPath, o.NewPath, StringComparison.OrdinalIgnoreCase) &&
+            IsStrictlyInside(e.NewPath, o.NewPath))
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// True when <paramref name="path"/> lies strictly inside the directory
+    /// <paramref name="directory"/> (case-insensitive, Windows semantics).
+    /// </summary>
+    private static bool IsStrictlyInside(string path, string directory)
+    {
+        if (string.IsNullOrEmpty(directory))
+            return false;
+
+        var dir = directory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (dir.Length == 0)
+            return false;
+
+        return path.StartsWith(dir + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+               path.StartsWith(dir + Path.AltDirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -13,7 +13,7 @@
     <!-- Text -->
     <SolidColorBrush x:Key="ForegroundColor" Color="#1A1A1F"/>
     <SolidColorBrush x:Key="SecondaryForeground" Color="#5F5F68"/>
-    <SolidColorBrush x:Key="TertiaryForeground" Color="#8E8E96"/>
+    <SolidColorBrush x:Key="TertiaryForeground" Color="#6B6B74"/>
 
     <!-- Borders -->
     <SolidColorBrush x:Key="BorderColor" Color="#E1E1E6"/>

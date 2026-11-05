@@ -86,7 +86,11 @@ public class RenameJournal
 
         try
         {
-            if (file.Exists)
+            // Directories report FileInfo.Exists == false; fingerprinting them
+            // is meaningless (their timestamp changes with any child change).
+            entry.IsDirectory = Directory.Exists(newPath);
+
+            if (!entry.IsDirectory && file.Exists)
             {
                 entry.FileLength = file.Length;
                 entry.LastWriteUtcTicks = file.LastWriteTimeUtc.Ticks;
@@ -128,7 +132,10 @@ public class RenameJournal
     }
 
     /// <summary>
-    /// Reverses the most recent completed batch. Returns a per-entry report.
+    /// Reverses the most recent batch that contains successful renames.
+    /// This includes partially failed and crash-interrupted batches: their
+    /// journal entries record exactly the renames that did happen.
+    /// Returns a per-entry report.
     /// Entries whose file changed after the rename, or whose original spot is
     /// now occupied, are skipped with a note instead of being forced.
     /// </summary>
@@ -137,7 +144,7 @@ public class RenameJournal
         undoneBatch = null;
         var doc = Load();
 
-        var batch = doc.Batches.LastOrDefault(b => b.Status == JournalBatchStatus.Completed);
+        var batch = doc.Batches.LastOrDefault(b => b.Entries.Any(e => e.Succeeded));
         if (batch == null)
             return UndoResult.NotFound();
 
@@ -174,7 +181,11 @@ public class RenameJournal
                 }
 
                 Directory.CreateDirectory(Path.GetDirectoryName(entry.OriginalPath)!);
-                File.Move(entry.NewPath, entry.OriginalPath);
+
+                if (entry.IsDirectory || Directory.Exists(entry.NewPath))
+                    Directory.Move(entry.NewPath, entry.OriginalPath);
+                else
+                    File.Move(entry.NewPath, entry.OriginalPath);
                 result.Restored++;
             }
             catch (Exception ex)
@@ -188,12 +199,17 @@ public class RenameJournal
     }
 
     /// <summary>
-    /// True when the file at NewPath no longer matches the fingerprint recorded
+    /// True when the item at NewPath no longer matches the fingerprint recorded
     /// at rename time, meaning the user edited it afterwards and undoing the
-    /// rename could confuse them.
+    /// rename could confuse them. Directories are never fingerprint-blocked:
+    /// their timestamps change whenever any child changes, and the whole tree
+    /// moves with the rename.
     /// </summary>
     private bool IsModified(JournalEntry entry)
     {
+        if (entry.IsDirectory)
+            return false;
+
         if (entry.FileLength == 0 && entry.LastWriteUtcTicks == 0)
             return false; // No fingerprint recorded - assume unmodified.
 
@@ -212,12 +228,13 @@ public class RenameJournal
     }
 
     /// <summary>
-    /// True when at least one completed, non-empty batch exists.
+    /// True when at least one batch contains successful renames that can be
+    /// reversed - including partially failed or interrupted batches.
     /// </summary>
     public bool CanUndo()
     {
         var doc = Load();
-        return doc.Batches.Any(b => b.Status == JournalBatchStatus.Completed && b.Entries.Any(e => e.Succeeded));
+        return doc.Batches.Any(b => b.Entries.Any(e => e.Succeeded));
     }
 
     /// <summary>

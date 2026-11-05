@@ -28,6 +28,23 @@ public partial class MainWindow : Window
 
     // ------------------------------------------------------------ chrome
 
+    private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // Double-click the header to toggle maximize.
+        if (e.ClickCount == 2)
+        {
+            Maximize_Click(sender, e);
+            return;
+        }
+
+        // DragMove throws if the button was released by the time we call it.
+        if (WindowState == WindowState.Maximized)
+            return;
+
+        try { DragMove(); }
+        catch (InvalidOperationException) { }
+    }
+
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
     private void Maximize_Click(object sender, RoutedEventArgs e) =>
