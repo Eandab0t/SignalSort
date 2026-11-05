@@ -106,7 +106,25 @@ Output: `src/SignalSort/bin/Release/net10.0-windows/win-x64/publish/SignalSort.e
   file but are not user-facing yet).
 - No AI naming, no online lookup, no automatic updates — deliberate scope.
 
+## Author
+
+SignalSort is designed, written and maintained by **Ean**
+([@Eandab0t](https://github.com/Eandab0t)) — original developer and sole
+copyright holder. The Signal Rail interface and the application icon derive
+from Ean's original logo artwork.
+
+## Acknowledgements
+
+- [TagLibSharp](https://github.com/mono/taglib-sharp) by Brian Nickel and
+  contributors — media and image metadata reading (LGPL-2.1).
+- The [PolyForm Project](https://polyformproject.org) license family and
+  [SPDX](https://spdx.org) license texts — referenced in licensing materials.
+
 ## Licensing
 
-No license has been selected yet. Licensing is an explicit decision deferred
-until first publication.
+SignalSort's source code is © 2026 Ean. A license has not been selected yet;
+licensing is an explicit decision deferred until first publication — see
+[`docs/licensing/LICENSING-DECISION.md`](docs/licensing/LICENSING-DECISION.md)
+for the options under consideration. Third-party components are covered by
+their own licenses — see [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
+
