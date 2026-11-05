@@ -10,8 +10,8 @@ publish/
 *.dll
 
 # But keep the repository's own source icon assets
-!src/FileQuickNamie/Resources/*.png
-!src/FileQuickNamie/Resources/*.ico
+!src/SignalSort/Resources/*.png
+!src/SignalSort/Resources/*.ico
 
 # IDE
 .vs/

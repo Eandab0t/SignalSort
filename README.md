@@ -1,6 +1,6 @@
-﻿# FileQuickNamie
+# SignalSort
 
-FileQuickNamie identifies what your files **actually are**, then gives them
+SignalSort identifies what your files **actually are**, then gives them
 names that make sense.
 
 It is a lightweight, offline-first Windows desktop utility (WPF, .NET 8) that
@@ -8,7 +8,7 @@ scans a folder, infers what each file is from technical characteristics and
 embedded metadata — not just its extension — and generates safe, meaningful
 renames that you preview before applying.
 
-> FileQuickNamie tells you what your files are, not just what their extensions say.
+> SignalSort tells you what your files are, not just what their extensions say.
 
 ## What it does
 
@@ -56,7 +56,7 @@ category + timestamp, and category + adjective+noun.
   clashes and rename chains; cycles are detected and blocked.
 - **No silent overwrites** — `File.Move` never overwrites.
 - **One-click undo** for the last completed batch, with a persistent journal
-  stored under `%LOCALAPPDATA%\FileQuickNamie`.
+  stored under `%LOCALAPPDATA%\SignalSort`.
 - Undo verifies each file (size + timestamp fingerprint) before reversing and
   skips files that were modified after the rename.
 
@@ -64,14 +64,14 @@ category + timestamp, and category + adjective+noun.
 
 Processing is entirely **offline and local**. No file content is uploaded, no
 telemetry is sent, and no account is required. Settings and the rename journal
-live in `%LOCALAPPDATA%\FileQuickNamie`; nothing is written into the folders
+live in `%LOCALAPPDATA%\SignalSort`; nothing is written into the folders
 you scan.
 
 ## Installation
 
 ### Released build
 
-FileQuickNamie publishes as a **single-file, self-contained Windows executable**
+SignalSort publishes as a **single-file, self-contained Windows executable**
 (`.exe`, ~70 MB) that includes the .NET runtime. Download it, double-click it,
 and run — no installation and no .NET SDK required.
 
@@ -81,12 +81,12 @@ Requires the .NET 8.0 SDK and Windows 10/11.
 
 ```powershell
 # Clone or unpack the source, then:
-dotnet build FileQuickNamie.sln -c Release
-dotnet publish src/FileQuickNamie/FileQuickNamie.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
+dotnet build SignalSort.sln -c Release
+dotnet publish src/SignalSort/SignalSort.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
 ```
 
 Output lands in
-`src/FileQuickNamie/bin/Release/net8.0-windows/win-x64/publish/`.
+`src/SignalSort/bin/Release/net8.0-windows/win-x64/publish/`.
 
 ## Continuous integration
 

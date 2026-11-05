@@ -22,10 +22,10 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore FileQuickNamie.sln
+        run: dotnet restore SignalSort.sln
 
       - name: Build solution (Release)
-        run: dotnet build FileQuickNamie.sln -c Release --nologo
+        run: dotnet build SignalSort.sln -c Release --nologo
 
       - name: Run tests
-        run: dotnet test FileQuickNamie.sln -c Release --nologo --no-build
+        run: dotnet test SignalSort.sln -c Release --nologo --no-build
