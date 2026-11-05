@@ -5,11 +5,14 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RootNamespace>SmartFileClassifier</RootNamespace>
-    <AssemblyTitle>Smart File Classifier &amp; Renamer</AssemblyTitle>
-    <AssemblyDescription>A smart file classification and renaming tool for Windows</AssemblyDescription>
-    <Authors>Generated</Authors>
+    <AssemblyName>FileQuickNamie</AssemblyName>
+    <AssemblyTitle>FileQuickNamie</AssemblyTitle>
+    <AssemblyDescription>Identifies what files actually are, then renames them safely</AssemblyDescription>
+    <Authors>Ean</Authors>
+    <Version>0.2.0</Version>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <SelfContained>true</SelfContained>
