@@ -1,0 +1,23 @@
+# Build artifacts
+bin/
+obj/
+publish/
+*.user
+*.suo
+
+# Self-contained executables
+*.exe
+*.dll
+
+# But keep the repository's own source icon assets
+!src/FileQuickNamie/Resources/*.png
+!src/FileQuickNamie/Resources/*.ico
+
+# IDE
+.vs/
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
