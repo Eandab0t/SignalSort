@@ -13,6 +13,7 @@
     <AssemblyDescription>Identifies what files actually are, then renames them safely</AssemblyDescription>
     <Authors>Ean</Authors>
     <Version>0.2.0</Version>
+    <ApplicationIcon>Resources/FileQuickNamie.ico</ApplicationIcon>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <SelfContained>true</SelfContained>
