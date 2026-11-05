@@ -13,7 +13,7 @@
     <AssemblyDescription>Identify. Understand. Rename.</AssemblyDescription>
     <Product>SignalSort</Product>
     <Company>Ean</Company>
-    <Copyright>Copyright © Ean</Copyright>
+    <Copyright>Copyright (c) Ean</Copyright>
     <Authors>Ean</Authors>
     <Version>0.3.0</Version>
     <ApplicationIcon>Resources/SignalSort.ico</ApplicationIcon>
