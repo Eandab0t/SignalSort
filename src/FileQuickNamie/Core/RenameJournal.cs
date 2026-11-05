@@ -292,7 +292,7 @@ public class UndoResult
     public int Skipped { get; set; }
     public List<string> Notes { get; set; } = new();
 
-    public bool IsSuccess => Skipped == 0;
+    public bool IsSuccess => Restored > 0 && Skipped == 0;
 
     public static UndoResult NotFound() => new()
     {

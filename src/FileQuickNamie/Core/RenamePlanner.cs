@@ -45,37 +45,38 @@ public class RenamePlanner
             raw.Add((item, oldPath, newPath));
         }
 
-        // Pass 2: de-duplicate destinations claimed by more than one item.
-        var finalDestinations = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var adjustments = 0;
+        // Pass 2: assign each entry its requested destination, then flag any
+        // destination claimed by more than one item as a within-batch collision.
+        // We never silently renumber - the user sees every conflict.
+        var claims = new List<(string NewPath, string OldPath)>();
+        foreach (var entry in raw)
+            claims.Add((entry.NewPath, entry.OldPath));
+
+        var duplicateDestinations = claims
+            .GroupBy(c => c.NewPath, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var entry in raw)
         {
-            var newPath = entry.NewPath;
-
-            if (finalDestinations.TryGetValue(newPath, out var claimedBy))
-            {
-                adjustments++;
-                newPath = MakeUnique(newPath, finalDestinations);
-            }
-
-            finalDestinations[newPath] = entry.OldPath;
+            var isDuplicate = duplicateDestinations.Contains(entry.NewPath);
 
             plan.Entries.Add(new RenamePlanEntry
             {
                 Item = entry.Item,
                 OldPath = entry.OldPath,
-                NewPath = newPath,
-                Status = RenamePlanStatus.Ready,
-                Note = ""
+                NewPath = entry.NewPath,
+                Status = isDuplicate ? RenamePlanStatus.Collision : RenamePlanStatus.Ready,
+                Note = isDuplicate
+                    ? "Duplicate destination within this batch."
+                    : ""
             });
         }
 
-        // Reflect de-duplicated names back so the UI shows the truth.
+        // Reflect planned names back so the UI shows the truth.
         foreach (var entry in plan.Entries)
-        {
             entry.Item.NewName = Path.GetFileName(entry.NewPath);
-        }
 
         // Pass 3: classify each entry.
         foreach (var entry in plan.Entries)
@@ -123,20 +124,6 @@ public class RenamePlanner
             return false;
 
         return File.Exists(newPath) || Directory.Exists(newPath);
-    }
-
-    private static string MakeUnique(string path, Dictionary<string, string> claimed)
-    {
-        var directory = Path.GetDirectoryName(path) ?? string.Empty;
-        var baseName = Path.GetFileNameWithoutExtension(path);
-        var extension = Path.GetExtension(path);
-
-        for (var n = 1; ; n++)
-        {
-            var candidate = Path.Combine(directory, $"{baseName}_{n}{extension}");
-            if (!claimed.ContainsKey(candidate) && !File.Exists(candidate) && !Directory.Exists(candidate))
-                return candidate;
-        }
     }
 
     /// <summary>
