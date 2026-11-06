@@ -1,0 +1,35 @@
+TagLibSharp 2.3.0 - Source Verification
+========================================
+
+SignalSort ships the unmodified TagLibSharp.dll from the official NuGet
+package, and includes the complete corresponding source for that exact
+version in this release.
+
+Binary verification
+-------------------
+Shipped file:    TagLibSharp.dll (next to SignalSort.exe)
+SHA256:          DAD93B152D55CF6A58B2037BCF9DD34B45D87761FE5ED61A232B3D4641D2A5D3
+Identical to:    lib/netstandard2.0/TagLibSharp.dll from the official
+                 taglibsharp 2.3.0 NuGet package (package is
+                 Authenticode-signed by the publisher).
+
+Source verification
+-------------------
+Included archive: TagLibSharp-2.3.0-source.zip
+Official source:  https://github.com/mono/taglib-sharp
+                  tag "TaglibSharp-2.3.0.0"
+                  (https://github.com/mono/taglib-sharp/archive/refs/tags/TaglibSharp-2.3.0.0.zip)
+SHA256 of the official archive:
+                  D154D28547EEC98D52EF38838055E0DD716571AAF0E7C18E0DF08A99C6A3DF33
+
+License
+-------
+TagLibSharp is licensed under the GNU Lesser General Public License v2.1
+(LGPL-2.1-only). The complete license text is provided in this release as
+licenses/TagLibSharp-LGPL-2.1.txt and inside this archive.
+
+Using a modified version of the library
+---------------------------------------
+1. Replace TagLibSharp.dll next to SignalSort.exe with your modified build.
+2. Or rebuild SignalSort from its source repository against a modified
+   TagLibSharp: dotnet build SignalSort.sln -c Release

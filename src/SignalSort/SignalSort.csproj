@@ -33,4 +33,17 @@
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
   </ItemGroup>
 
+  <!-- Ship license/attribution documents with every distribution
+       (Apache-2.0 NOTICE requirement + LGPL-2.1 license-text requirement). -->
+  <ItemGroup>
+    <None Include="Resources\licenses\TagLibSharp-LGPL-2.1.txt" CopyToOutputDirectory="PreserveNewest"
+          Link="licenses\TagLibSharp-LGPL-2.1.txt" />
+    <None Include="..\..\LICENSE" CopyToOutputDirectory="PreserveNewest" Link="licenses\LICENSE" />
+    <None Include="..\..\NOTICE" CopyToOutputDirectory="PreserveNewest" Link="licenses\NOTICE" />
+    <None Include="..\..\THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest"
+          Link="licenses\THIRD-PARTY-NOTICES.md" />
+    <None Include="..\..\docs\licensing\third-party\TagLibSharp-source-verification.txt"
+          CopyToOutputDirectory="PreserveNewest" Link="licenses\TagLibSharp-source-verification.txt" />
+  </ItemGroup>
+
 </Project>

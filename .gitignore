@@ -13,6 +13,9 @@ publish/
 !src/SignalSort/Resources/*.png
 !src/SignalSort/Resources/*.ico
 
+# Large third-party source archives are shipped in release packages, not in git
+docs/licensing/third-party/*.zip
+
 # IDE
 .vs/
 .idea/
