@@ -74,13 +74,17 @@ rename journal live in `%LOCALAPPDATA%\SignalSort`.
 
 ## Installation
 
-No installer: SignalSort ships as a single self-contained `.exe`
-(~70 MB, .NET runtime included).
+SignalSort ships as a **self-contained ZIP for 64-bit Windows** — no
+installation, and the .NET runtime is included.
 
-1. Download `SignalSort.exe`.
-2. Double-click. Windows may ask you to confirm — choose **More info → Run
-   anyway** for unsigned builds.
+1. Download and extract `SignalSort-win-x64.zip`.
+2. Run `SignalSort.exe`. Windows may ask you to confirm — choose **More info →
+   Run anyway** for unsigned builds.
 3. Select or drag in a folder, review the preview, rename.
+
+`TagLibSharp.dll` sits next to the executable; under its LGPL-2.1 license you
+may replace it with a modified build — see
+[`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
 
 ## Build from source
 
@@ -91,10 +95,12 @@ git clone <repository-url>
 cd SignalSort
 dotnet build SignalSort.sln -c Release
 dotnet test SignalSort.sln -c Release
-dotnet publish src/SignalSort/SignalSort.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
+dotnet publish src/SignalSort/SignalSort.csproj -c Release -r win-x64 --self-contained
 ```
 
-Output: `src/SignalSort/bin/Release/net10.0-windows/win-x64/publish/SignalSort.exe`
+Output: `src/SignalSort/bin/Release/net10.0-windows/win-x64/publish/`
+(distribute as a ZIP — see `THIRD-PARTY-NOTICES.md` for why SignalSort is not
+published as a single-file executable).
 
 ## Known limitations
 
@@ -108,23 +114,20 @@ Output: `src/SignalSort/bin/Release/net10.0-windows/win-x64/publish/SignalSort.e
 
 ## Author
 
-SignalSort is designed, written and maintained by **Ean**
-([@Eandab0t](https://github.com/Eandab0t)) — original developer and sole
-copyright holder. The Signal Rail interface and the application icon derive
-from Ean's original logo artwork.
+SignalSort is created and maintained by **Ean**
+([@Eandab0t](https://github.com/Eandab0t)).
 
 ## Acknowledgements
 
 - [TagLibSharp](https://github.com/mono/taglib-sharp) by Brian Nickel and
   contributors — media and image metadata reading (LGPL-2.1).
-- The [PolyForm Project](https://polyformproject.org) license family and
-  [SPDX](https://spdx.org) license texts — referenced in licensing materials.
 
-## Licensing
+## License
 
-SignalSort's source code is © 2026 Ean. A license has not been selected yet;
-licensing is an explicit decision deferred until first publication — see
-[`docs/licensing/LICENSING-DECISION.md`](docs/licensing/LICENSING-DECISION.md)
-for the options under consideration. Third-party components are covered by
-their own licenses — see [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
+SignalSort is © 2026 Ean, licensed under the
+[Apache License 2.0](LICENSE). In short: you may use, study, modify and
+redistribute it — including commercially — provided you retain the required
+license and attribution notices; it grants no trademark rights in the
+SignalSort name. Third-party components are covered by their own licenses —
+see [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
 

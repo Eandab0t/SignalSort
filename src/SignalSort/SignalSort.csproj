@@ -17,16 +17,14 @@
     <Authors>Ean</Authors>
     <Version>0.3.0</Version>
     <ApplicationIcon>Resources/SignalSort.ico</ApplicationIcon>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
-  <!-- Release-only: single-file, self-contained publish -->
+  <!-- Release publish: self-contained, NOT single-file.
+       TagLibSharp (LGPL-2.1) must ship as a separate, replaceable DLL so
+       recipients can modify the library and relink (LGPL section 6).
+       Do not re-enable PublishSingleFile without revisiting
+       THIRD-PARTY-NOTICES.md. -->
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <PublishSingleFile>true</PublishSingleFile>
-    <PublishTrimmed>false</PublishTrimmed>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>

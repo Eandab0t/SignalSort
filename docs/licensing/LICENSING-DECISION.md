@@ -1,7 +1,7 @@
 # SignalSort — Licensing Decision Document
 
-**Author:** prepared for Ean (sole copyright holder)
-**Status:** awaiting Ean's decision. No license has been installed.
+**Author:** prepared for Ean (original developer)
+**Status:** **DECIDED — Apache License 2.0** (approved 2026-11-05)
 **Date:** 2026-11-05
 
 ---
@@ -37,7 +37,7 @@ Full canonical texts live in [`texts/`](./texts/).
 | Redistribution? | Yes | Yes | Yes | Yes (noncommercial) |
 | Modifications/forks? | Yes | Yes | Yes | Yes (noncommercial) |
 | Sell a modified version? | Yes | Yes | Yes | No |
-| Remove your name? | From the LICENSE/notice: no (license violation). From their app's UI: yes, possible | From LICENSE/NOTICE: no (violation). App UI: yes, possible | Same as MIT | Removing the `Required Notice` line terminates their license outright |
+| Remove your name? | From the LICENSE/notice: no (license violation). From their app's UI: yes, possible | From LICENSE/NOTICE: no (violation). App UI: yes, possible | Same as MIT | Removing the `Required Notice` line is a violation; their license ends **unless cured within 32 days of written notice** (first violation) |
 | OSI-approved open source? | Yes | Yes | Yes | **No** (source-available) |
 | Your control after publishing | Lowest | Moderate | Low | Highest |
 | Patent grant to users | No | **Yes** (+ retaliation clause) | No | Yes (+ defense clause) |
@@ -64,11 +64,13 @@ otherwise equivalent to MIT.
 
 **PolyForm Noncommercial 1.0.0** — "Anyone may use, change, and share it, for
 anything *noncommercial* — and every copy must carry the Required Notice
-line." This is the strongest fit for goals 5–6 (removing the Required Notice
-terminates their license) and goal 2 (no one can build a business on it). The
-cost is goal 3 and 8: it is **not open source** by the OSI definition, so some
-people will not touch it, it cannot be included in other open-source projects,
-and workplace use counts as "commercial" even when personal and harmless.
+line." This is the strongest fit for goals 5–6 and goal 2 (no one can build a
+business on it). Two honest caveats: it is **not open source** by the OSI
+definition, so some people will not touch it, it cannot be included in other
+open-source projects, and workplace use counts as "commercial" even when
+personal and harmless. And removing the Required Notice does not always mean
+*immediate* termination — the terms give a violator a 32-day cure period
+after written notice for a first offense.
 
 > Note: a widely known "PolyForm Attribution" license does **not** exist — the
 > PolyForm suite is Strict, Noncommercial, Free-Trial, Internal-Use,
@@ -95,41 +97,40 @@ CC BY-NC 4.0 *would* technically express "credit + noncommercial" for a
 standalone compiled app, but software-specific terms (PolyForm) do the same job
 without those defects.
 
-## 4. Recommendation
+## 4. Decision (approved by Ean, 2026-11-05)
 
-**Primary recommendation: Apache-2.0, with a NOTICE file.**
+**Chosen: Apache-2.0, with a NOTICE file.**
 
-Why this fits *your* goals specifically:
+What this means, stated plainly:
+
+- **Apache protects attribution, not exclusivity.** Redistributors of
+  derivative works must carry the applicable copyright and attribution notices
+  (including the NOTICE file) — but nothing guarantees Ean's name appears on
+  an application splash screen or in a fork's marketing. Anyone may take
+  SignalSort, build a polished commercial version, and sell it. They must
+  comply with the license; Ean does not control their business.
+- Ean remains the author of his own contributions and may re-license future
+  versions at any time (sole author of the published code; versions already
+  shipped under Apache-2.0 remain Apache-2.0 for copies already received).
+
+Why this fits the stated goals:
 
 - Goals 1, 4, 5: the NOTICE file mechanism keeps `SignalSort — Copyright Ean`
-  inside every derived distribution; Apache-2.0 §4(c)–(d) makes removing those
-  notices a license violation, and §6 stops derivatives from using the
-  SignalSort name to promote themselves.
+  inside every derived distribution; §4(c)–(d) makes removing those notices a
+  license violation, and §6 stops derivatives from using the SignalSort name
+  to promote themselves.
 - Goal 3: fully open source, discoverable, usable by anyone — including
-  harmless personal and workplace use you said you didn't want to prohibit.
-- Goal 2: permissive does not mean business-ready-for-them — it just means you
-  are not charging. Nothing about Apache-2.0 obliges you to support, maintain,
-  or bless commercial forks.
-- Goal 7 (undecided): as the **sole copyright holder with no contributors yet**,
-  you can re-license *future versions* under different terms at any time
-  (PolyForm Noncommercial, dual licensing, anything). Versions already
-  published under Apache-2.0 stay Apache-2.0 for the copies already received —
-  that is the one irreversible part. Starting permissive and tightening later
-  is always available; starting restrictive and loosening later is also
-  available but loses you audience in the meantime.
+  harmless personal and workplace use.
+- Goal 2: permissive does not oblige Ean to support, maintain, or endorse
+  commercial forks.
+- Goal 7 (was undecided): re-licensing future versions remains available
+  while the project stays solo-authored.
 
-**Restrictive alternative: PolyForm Noncommercial 1.0.0** with
-`Required Notice: Copyright (c) 2026 Ean`. Choose this instead if, on
-reflection, "nobody ever makes money from my code without asking me" matters
-more to you than open-source accessibility. It keeps every one of your goals
-except unrestricted discoverability.
-
-**If credit stripping is your single biggest fear:** be aware that *no*
-license technically prevents a bad actor from violating it — the difference is
-that Apache-2.0/NOTICE and PolyForm make the violation *unambiguous* and give
-you a DMCA takedown and public-credit case, while MIT makes violations
-easy to overlook. Enforcement reality for a solo author is takedowns and
-community pressure, not lawsuits.
+**Authorship note:** development was AI-assisted under Ean's direction. Under
+U.S. Copyright Office guidance, authorship follows the human creative control
+exercised over the work; this README deliberately states
+"Created and maintained by Ean" — establishing developer identity without a
+broader legal claim than necessary.
 
 **Not recommended:** CC licenses for the reasons above; inventing a custom
 license (legally risky and mutually unintelligible); publishing with no license

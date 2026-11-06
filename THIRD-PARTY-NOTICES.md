@@ -15,11 +15,21 @@ components.
 - **NuGet:** https://www.nuget.org/packages/TagLibSharp/
 
   SignalSort uses TagLibSharp unmodified, as a dynamically linked library
-  distributed via NuGet. Under LGPL-2.1 this use requires that the library's
-  copyright and license notice be reproduced here, and that recipients of
-  SignalSort receive these notices. The library itself remains under
-  LGPL-2.1; SignalSort's own license (see LICENSE, when published) does not
-  change it.
+  distributed via NuGet. **TagLibSharp ships as a separate `TagLibSharp.dll`
+  file next to `SignalSort.exe`** — it is not embedded in the executable.
+
+  Under LGPL-2.1 section 6, recipients of SignalSort may modify TagLibSharp
+  and use the modified version:
+
+  1. **Replace the DLL:** drop a modified or different build of
+     `TagLibSharp.dll` into the SignalSort folder, replacing the original.
+  2. **Relink from source:** TagLibSharp's complete machine-readable source is
+     published at https://github.com/mono/taglib-sharp — build a modified
+     copy and rebuild SignalSort from this repository's source against it
+     (`dotnet build SignalSort.sln -c Release`).
+
+  The library itself remains under LGPL-2.1; SignalSort's own license (see
+  LICENSE) does not change it.
 
   A copy of the LGPL-2.1 text is available at
   https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt
