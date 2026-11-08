@@ -1,14 +1,12 @@
-# SignalSort
-
-**Identify. Understand. Rename.**
+![SignalSort social preview](https://repository-images.githubusercontent.com/1448843297/407adb7d-36db-472e-b9ae-d4faaeec0349)
 
 SignalSort analyzes technical characteristics and embedded metadata to identify
 what files actually are, then generates meaningful filenames and lets you
 rename them safely.
 
-> It understands your files, not just their extensions.
+I made this because when I download a bunch of files, I tend to have trouble sorting the hundreds of files that I have. Audio, images, or something along the lines like that. I was very disorganized, and using AI, though helpful, can be a waste of resources in the long run, so something running manually on your computer can save on resources. I know this might seem useless for most people, but this has helped me with my file management!
 
-A rename tool can insert dates and counters — but only after *someone* decides
+A rename tool can insert dates and counters, but only after *someone* decides
 what a file is. SignalSort makes that decision for you, from evidence inside
 the file: duration, bitrate, channel count, resolution, image dimensions and
 EXIF capture dates. A mono 8 kbps recording becomes `VoiceMemo_...`; a
