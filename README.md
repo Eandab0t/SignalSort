@@ -68,9 +68,22 @@ the name.
 
 ## Privacy
 
-SignalSort works entirely offline. No file contents, names or telemetry ever
-leave your machine. No account, no network access, no cloud. Settings and the
-rename journal live in `%LOCALAPPDATA%\SignalSort`.
+SignalSort works entirely offline by default. No file contents, names or
+telemetry ever leave your machine. The only network call the app can make is
+an update check you trigger yourself, to an HTTPS manifest URL you configure
+in Settings — it is disabled (empty) out of the box, and updates are never
+applied automatically (see [`docs/public/UPDATE_SYSTEM.md`](docs/public/UPDATE_SYSTEM.md)).
+Settings and the rename journal live in `%LOCALAPPDATA%\SignalSort`.
+
+## Updates
+
+Updates follow a strict pipeline: **check → review → download → verify →
+stage** — and nothing is applied without your explicit confirmation
+(application updates additionally require a restart). Update work never runs
+while a scan or rename is active and never touches the rename journal. The
+shipped build verifies package SHA-256 hashes but has **no trusted signing
+key configured yet**, so no package can pass signature verification until an
+operator provisions one — by design. Details: [`docs/public/UPDATE_SYSTEM.md`](docs/public/UPDATE_SYSTEM.md).
 
 ## Installation
 
@@ -110,7 +123,18 @@ published as a single-file executable).
 - Image EXIF support depends on the format (JPEG/TIFF are richest).
 - Undo covers the most recent batch (older batches remain in the journal
   file but are not user-facing yet).
-- No AI naming, no online lookup, no automatic updates — deliberate scope.
+- No AI naming, no online lookup. Update checks are manual and opt-in;
+  nothing is ever applied automatically.
+
+## Documentation
+
+Full documentation lives in [`docs/public/`](docs/public/):
+
+- [`ARCHITECTURE.md`](docs/public/ARCHITECTURE.md) — how the app is structured.
+- [`UPDATE_SYSTEM.md`](docs/public/UPDATE_SYSTEM.md) — update pipeline, security model, Velopack evaluation.
+- [`INTEGRATIONS.md`](docs/public/INTEGRATIONS.md) — integration support (none exist yet).
+- [`SECURITY.md`](docs/public/SECURITY.md) — supported versions, reporting security issues.
+- [`licensing/LICENSING-DECISION.md`](docs/public/licensing/LICENSING-DECISION.md) — licensing rationale.
 
 ## Author
 

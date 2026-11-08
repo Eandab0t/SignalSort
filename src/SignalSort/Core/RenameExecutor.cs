@@ -126,9 +126,16 @@ public class RenameExecutor
         {
             var directory = Path.GetDirectoryName(entry.NewPath) ?? string.Empty;
 
+            // A case-only rename (a.txt -> A.TXT) targets the same file on a
+            // case-insensitive filesystem: the destination "exists" because it
+            // IS the source, and Windows allows the rename.
+            var isCaseOnlyRename =
+                string.Equals(entry.OldPath, entry.NewPath, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(entry.OldPath, entry.NewPath, StringComparison.Ordinal);
+
             // Re-check the destination immediately before the move: the disk
             // may have changed since planning.
-            if (File.Exists(entry.NewPath) || Directory.Exists(entry.NewPath))
+            if (!isCaseOnlyRename && (File.Exists(entry.NewPath) || Directory.Exists(entry.NewPath)))
             {
                 // If the source vanished, report that distinctly.
                 if (!File.Exists(entry.OldPath) && !Directory.Exists(entry.OldPath))

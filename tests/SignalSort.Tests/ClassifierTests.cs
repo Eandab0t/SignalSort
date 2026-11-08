@@ -82,9 +82,10 @@ public class ClassifierTests
         using var root = new TempDir();
         var wav = root.File("tone.wav", MakeWav(44100, 2, 16, 44100));
         var signals = new List<ClassificationSignal>();
-        var (cat, purpose, conf, _) = Classifier.Classify(wav, signals);
+        var (cat, purpose, conf, _, metadata) = Classifier.Classify(wav, signals);
         Assert.Equal("Audio", cat);
         Assert.True(conf == ClassificationConfidence.Strong);
+        Assert.NotNull(metadata);
         Assert.Contains(signals, s => s.Label == "Channels" && s.Value == "2");
         Assert.Contains(signals, s => s.Label == "Bitrate");
     }
@@ -96,7 +97,7 @@ public class ClassifierTests
         using var root = new TempDir();
         var wav = root.File("memo.wav", MakeWav(8000, 1, 8, 8000));
         var signals = new List<ClassificationSignal>();
-        var (_, purpose, conf, _) = Classifier.Classify(wav, signals);
+        var (_, purpose, conf, _, _) = Classifier.Classify(wav, signals);
         Assert.Equal("VoiceMemo", purpose);
         Assert.Equal(ClassificationConfidence.Strong, conf);
     }
@@ -109,7 +110,7 @@ public class ClassifierTests
         using var root = new TempDir();
         var vid = root.File("clip.avi", new byte[0]);
         var signals = new List<ClassificationSignal>();
-        var (cat, purpose, conf, _) = Classifier.Classify(vid, signals);
+        var (cat, purpose, conf, _, _) = Classifier.Classify(vid, signals);
         Assert.Equal("Video", cat);
         Assert.Equal("UnknownVideo", purpose);
         Assert.Equal(ClassificationConfidence.Unknown, conf);
@@ -121,7 +122,7 @@ public class ClassifierTests
         using var root = new TempDir();
         var png = root.File("tiny.png", new byte[0]);
         var signals = new List<ClassificationSignal>();
-        var (cat, purpose, conf, _) = Classifier.Classify(png, signals);
+        var (cat, purpose, conf, _, _) = Classifier.Classify(png, signals);
         Assert.Equal("Image", cat);
         // No dimensions => falls back to size (0 KB) => Thumbnail heuristic
         Assert.Equal("Thumbnail", purpose);
@@ -134,7 +135,7 @@ public class ClassifierTests
         using var root = new TempDir();
         var f = root.File("weird.xyzzy", new byte[] { 1, 2, 3 });
         var signals = new List<ClassificationSignal>();
-        var (cat, purpose, _, _) = Classifier.Classify(f, signals);
+        var (cat, purpose, _, _, _) = Classifier.Classify(f, signals);
         Assert.Equal("Document", cat);
         Assert.Equal("Document", purpose);
     }

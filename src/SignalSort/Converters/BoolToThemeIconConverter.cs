@@ -21,23 +21,3 @@ public class BoolToThemeIconConverter : IValueConverter
         throw new NotSupportedException();
     }
 }
-
-/// <summary>
-/// Converts a bool to a display string (e.g., "Dark" / "Light").
-/// </summary>
-public class BoolToThemeTextConverter : IValueConverter
-{
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        if (value is bool isDark && isDark)
-            return "Dark";
-        return "Light";
-    }
-
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        if (value is string text)
-            return text == "Dark";
-        return false;
-    }
-}

@@ -1,26 +1,33 @@
-# Build artifacts
+# Build output (.NET)
 bin/
 obj/
 publish/
-*.user
-*.suo
+TestResults/
 
-# Self-contained executables
-*.exe
-*.dll
-
-# But keep the repository's own source icon assets
-!src/SignalSort/Resources/*.png
-!src/SignalSort/Resources/*.ico
-
-# Large third-party source archives are shipped in release packages, not in git
-docs/licensing/third-party/*.zip
-
-# IDE
+# IDE / editor user state
 .vs/
 .idea/
 *.swp
+*.user
+*.suo
+
+# Local development and private material (never pushed)
+__development/
+__private/
+
+# Secrets
+.env
+
+# Accidental release artifacts dropped in the repository root
+/*.exe
+/*.zip
+
+# Large third-party source archives ship in release packages, not in git
+docs/public/licensing/third-party/*.zip
 
 # OS
 Thumbs.db
 .DS_Store
+
+# Local release packages and history backups
+/SignalSort-releases/

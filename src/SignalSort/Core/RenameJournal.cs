@@ -24,6 +24,7 @@ public class RenameJournal
     };
 
     private readonly string _journalPath;
+    private JournalDocument? _cachedDocument;
 
     public RenameJournal(string? journalPath = null)
     {
@@ -44,18 +45,21 @@ public class RenameJournal
     /// </summary>
     public JournalDocument Load()
     {
+        if (_cachedDocument != null)
+            return _cachedDocument;
+
         try
         {
             if (!File.Exists(_journalPath))
-                return new JournalDocument();
+                return _cachedDocument = new JournalDocument();
 
             var json = File.ReadAllText(_journalPath);
-            return JsonSerializer.Deserialize<JournalDocument>(json) ?? new JournalDocument();
+            return _cachedDocument = JsonSerializer.Deserialize<JournalDocument>(json) ?? new JournalDocument();
         }
         catch (Exception)
         {
             TryBackupCorruptFile();
-            return new JournalDocument();
+            return _cachedDocument = new JournalDocument();
         }
     }
 
@@ -173,7 +177,13 @@ public class RenameJournal
                     continue;
                 }
 
-                if (File.Exists(entry.OriginalPath) || Directory.Exists(entry.OriginalPath))
+                // For a case-only rename the original "location" is the same
+                // file we are moving back, so it is not considered occupied.
+                var originalOccupied =
+                    (File.Exists(entry.OriginalPath) || Directory.Exists(entry.OriginalPath)) &&
+                    !string.Equals(entry.OriginalPath, entry.NewPath, StringComparison.OrdinalIgnoreCase);
+
+                if (originalOccupied)
                 {
                     result.Skipped++;
                     result.Notes.Add($"Skipped: original location is now occupied ({Path.GetFileName(entry.OriginalPath)}).");
@@ -250,7 +260,8 @@ public class RenameJournal
     }
 
     /// <summary>
-    /// Atomically persists the document, keeping the most recent batches only.
+    /// Atomically persists the document, keeping the most recent batches only,
+    /// and refreshes the in-memory cache.
     /// </summary>
     private void Save(JournalDocument doc)
     {
@@ -263,6 +274,8 @@ public class RenameJournal
                 .OrderBy(b => b.StartedUtc)
                 .ToList();
         }
+
+        _cachedDocument = doc;
 
         var dir = Path.GetDirectoryName(_journalPath);
         if (!string.IsNullOrEmpty(dir))

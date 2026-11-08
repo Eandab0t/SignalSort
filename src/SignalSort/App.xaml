@@ -10,12 +10,7 @@
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Converters -->
-            <converters:BoolToCheckConverter x:Key="BoolToCheck"/>
             <converters:BoolToThemeIconConverter x:Key="BoolToThemeIcon"/>
-            <converters:BoolToThemeTextConverter x:Key="BoolToThemeText"/>
-            <converters:SortOrderToDisplayConverter x:Key="SortOrderToDisplay"/>
-            <converters:NamingStyleToDisplayConverter x:Key="NamingStyleToDisplay"/>
-            <converters:IntGreaterThanZeroToVisibilityConverter x:Key="IntToVis"/>
             <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis"/>
             <converters:NullToVisibilityConverter x:Key="NullToVis"/>
             <converters:GreaterThanZeroConverter x:Key="GreaterThanZero"/>

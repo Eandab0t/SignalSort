@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -13,11 +14,45 @@ namespace SignalSort.Views;
 /// </summary>
 public partial class MainWindow : Window
 {
+    private bool _closeAfterOperation;
+
     public MainWindow()
     {
         InitializeComponent();
         ApplyTheme();
         StateChanged += (_, _) => UpdateMaximizeGlyph();
+        Closing += Window_Closing;
+    }
+
+    /// <summary>
+    /// Graceful shutdown: if an operation is in flight, cancel it and wait
+    /// until it reaches its journaled stop point before closing.
+    /// </summary>
+    private void Window_Closing(object? sender, CancelEventArgs e)
+    {
+        if (_closeAfterOperation || DataContext is not MainViewModel vm)
+            return;
+
+        if (!vm.IsBusy)
+            return;
+
+        // Cancel and hold the window open until the operation stops.
+        e.Cancel = true;
+        _closeAfterOperation = true;
+        vm.RequestShutdown();
+
+        _ = Task.Run(async () =>
+        {
+            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+            while (vm.IsBusy && DateTime.UtcNow < deadline)
+                await Task.Delay(100);
+
+            _ = Dispatcher.BeginInvoke(() =>
+            {
+                _closeAfterOperation = false;
+                Close();
+            });
+        });
     }
 
     private void ApplyTheme()
@@ -26,7 +61,8 @@ public partial class MainWindow : Window
             App.ApplyTheme(vm.IsDarkTheme);
     }
 
-    // ------------------------------------------------------------ chrome
+    // CHROME
+    // Window chrome buttons and dragging.
 
     private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -60,7 +96,8 @@ public partial class MainWindow : Window
         button.Content = WindowState == WindowState.Maximized ? "\uE923" : "\uE922";
     }
 
-    // ------------------------------------------------------------ navigation
+    // NAV
+    // Side-rail navigation.
 
     private void Nav_Click(object sender, RoutedEventArgs e)
     {
@@ -77,7 +114,8 @@ public partial class MainWindow : Window
             vm.BrowseCommand.Execute(null);
     }
 
-    // ------------------------------------------------------------ drag & drop
+    // DRAGDROP
+    // Folder drop handling.
 
     private void Window_DragOver(object sender, DragEventArgs e)
     {
@@ -103,7 +141,8 @@ public partial class MainWindow : Window
         _ = vm.ScanFromDropAsync(path);
     }
 
-    // ------------------------------------------------------------ inspector
+    // INSPECTOR
+    // Purpose correction.
 
     private void ApplyPurpose_Click(object sender, RoutedEventArgs e)
     {

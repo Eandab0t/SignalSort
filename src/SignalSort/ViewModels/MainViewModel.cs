@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using SignalSort.Core;
+using SignalSort.Infrastructure.Updates;
 using SignalSort.Models;
 
 namespace SignalSort.ViewModels;
@@ -24,8 +25,7 @@ public class MainViewModel : INotifyPropertyChanged
 {
     private readonly MetadataReader _metadataReader = new();
     private readonly FileClassifier _classifier;
-    private readonly FileScanner _scanner;
-    private readonly NameGenerator _nameGenerator = new();
+    private readonly FileScanner _scanner;    private readonly NameGenerator _nameGenerator = new();
     private readonly RenamePlanner _planner = new();
     private readonly RenameJournal _journal;
     private readonly AppSettings _settings;
@@ -35,6 +35,8 @@ public class MainViewModel : INotifyPropertyChanged
 
     private ObservableCollection<FileClassification> _items = new();
     private ICollectionView? _itemsView;
+    private int _planGeneration;
+    private bool _suppressItemEvents;
 
     private string _selectedFolderPath = "";
     private bool _isBusy;
@@ -54,11 +56,14 @@ public class MainViewModel : INotifyPropertyChanged
     private int _collisionCount;
     private bool _canUndo;
     private string _historyText = "";
+    private string _updateManifestUrl = "";
+    private string _updatesStatus = "Never checked.";
+    private ObservableCollection<UpdateInfo> _availableUpdates = new();
 
     public MainViewModel()
     {
         _classifier = new FileClassifier(_metadataReader);
-        _scanner = new FileScanner(_classifier, _metadataReader);
+        _scanner = new FileScanner(_classifier);
         _journal = new RenameJournal();
         _settings = AppSettings.Load();
 
@@ -71,6 +76,7 @@ public class MainViewModel : INotifyPropertyChanged
         _preserveExtension = _settings.PreserveExtension;
         _selectedNamingStyle = _settings.NamingStyle;
         _selectedSortOrder = _settings.SortOrder;
+        _updateManifestUrl = _settings.UpdateManifestUrl;
 
         Items = new ObservableCollection<FileClassification>();
 
@@ -78,12 +84,13 @@ public class MainViewModel : INotifyPropertyChanged
         ScanCommand = new RelayCommand(_ => _ = ScanAsync(), _ => !IsBusy && Directory.Exists(SelectedFolderPath));
         CancelScanCommand = new RelayCommand(_ => _scanCts?.Cancel(), _ => IsBusy && _scanCts != null);
         RenameCommand = new RelayCommand(_ => _ = RenameSelectedAsync(), _ => !IsBusy && SelectedCount > 0);
-        PreviewCommand = new RelayCommand(_ => PreviewPlan(), _ => !IsBusy && SelectedCount > 0);
+        PreviewCommand = new RelayCommand(_ => _ = PreviewPlan(), _ => !IsBusy && SelectedCount > 0);
         UndoCommand = new RelayCommand(_ => _ = UndoLastAsync(), _ => !IsBusy && CanUndo);
         ClearLogCommand = new RelayCommand(_ => LogOutput = "", _ => true);
         ToggleThemeCommand = new RelayCommand(_ => IsDarkTheme = !IsDarkTheme, _ => true);
         SelectAllCommand = new RelayCommand(p => SetAllSelection(true), _ => !IsBusy);
         SelectNoneCommand = new RelayCommand(_ => SetAllSelection(false), _ => !IsBusy);
+        CheckForUpdatesCommand = new RelayCommand(_ => _ = CheckForUpdatesAsync(), _ => !IsBusy);
 
         CanUndo = _journal.CanUndo();
         LoadHistoryText();
@@ -91,26 +98,52 @@ public class MainViewModel : INotifyPropertyChanged
         App.ApplyTheme(_isDarkTheme);
     }
 
-    // ------------------------------------------------------------------ data
+    // STATE
+    // Item collection and live view plumbing.
 
     public ObservableCollection<FileClassification> Items
     {
         get => _items;
         private set
         {
+            if (_items != null)
+                foreach (var item in _items)
+                    item.PropertyChanged -= Item_PropertyChanged;
+
             _items = value;
+            foreach (var item in _items)
+                item.PropertyChanged += Item_PropertyChanged;
+
             _itemsView = CollectionViewSource.GetDefaultView(_items);
             _itemsView.Filter = FilterItem;
             _itemsView.SortDescriptions.Clear();
             ApplySortDescriptions();
             OnPropertyChanged();
-            OnPropertyChanged(nameof(FilesShown));
         }
     }
 
     public ICollectionView ItemsView => _itemsView ?? CollectionViewSource.GetDefaultView(Items);
 
-    // ------------------------------------------------------------- properties
+    private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_suppressItemEvents)
+            return;
+
+        if (e.PropertyName is nameof(FileClassification.IsSelected))
+        {
+            OnPropertyChanged(nameof(SelectedCount));
+            OnPropertyChanged(nameof(ChangesCount));
+            BumpPlanGeneration();
+            _ = PlanInBackground();
+        }
+        else if (e.PropertyName is nameof(FileClassification.NewName))
+        {
+            OnPropertyChanged(nameof(ChangesCount));
+        }
+    }
+
+    // PROPS
+    // Bindable state.
 
     public string SelectedFolderPath
     {
@@ -211,13 +244,13 @@ public class MainViewModel : INotifyPropertyChanged
     public string SearchText
     {
         get => _searchText;
-        set { _searchText = value; OnPropertyChanged(); ItemsView.Refresh(); OnPropertyChanged(nameof(FilesShown)); }
+        set { _searchText = value; OnPropertyChanged(); ItemsView.Refresh(); }
     }
 
     public string ActiveFilter
     {
         get => _activeFilter;
-        set { _activeFilter = value; OnPropertyChanged(); ItemsView.Refresh(); OnPropertyChanged(nameof(FilesShown)); }
+        set { _activeFilter = value; OnPropertyChanged(); ItemsView.Refresh(); }
     }
     public FileClassification? SelectedItem
     {
@@ -251,27 +284,67 @@ public class MainViewModel : INotifyPropertyChanged
         set { _historyText = value; OnPropertyChanged(); }
     }
 
-    // ------------------------------------------------------------- derived
+    /// <summary>User-configured HTTPS manifest URL for update checks. Empty disables checks.</summary>
+    public string UpdateManifestUrl
+    {
+        get => _updateManifestUrl;
+        set { _updateManifestUrl = value; OnPropertyChanged(); Persist(); }
+    }
 
-    public IReadOnlyList<string> Filters => new[]
-        { "All Files", "Images", "Audio", "Video", "Documents", "Folders", "Conflicts" };
+    /// <summary>Status line for the Updates section in Settings.</summary>
+    public string UpdatesStatus
+    {
+        get => _updatesStatus;
+        set { _updatesStatus = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>Updates listed by the last successful check. Empty when up to date.</summary>
+    public ObservableCollection<UpdateInfo> AvailableUpdates
+    {
+        get => _availableUpdates;
+        private set { _availableUpdates = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>The running application version, e.g. "0.3.0".</summary>
+    public string CurrentVersion
+    {
+        get
+        {
+            var v = typeof(MainViewModel).Assembly.GetName().Version;
+            return v is null ? "0.0.0" : $"{v.Major}.{v.Minor}.{v.Build}";
+        }
+    }
+
+    // DERIVED
+    // Computed bindables.
 
     /// <summary>
-    /// Naming style values exposed to the ComboBox in the toolbar.
+    /// Naming styles exposed to the toolbar ComboBox as friendly-label pairs.
     /// </summary>
-    public IReadOnlyList<NamingStyle> NamingStyles => Enum.GetValues<NamingStyle>();
+    public IReadOnlyList<KeyValuePair<NamingStyle, string>> NamingStyles =>
+        Enum.GetValues<NamingStyle>().Select(s => new KeyValuePair<NamingStyle, string>(s, s.GetDisplayName())).ToList();
 
     /// <summary>
-    /// Sort order values exposed to the ComboBox in the toolbar.
+    /// Sort orders exposed to the toolbar ComboBox as friendly-label pairs.
     /// </summary>
-    public IReadOnlyList<SortOrder> SortOrders => Enum.GetValues<SortOrder>();
+    public IReadOnlyList<KeyValuePair<SortOrder, string>> SortOrders =>
+        Enum.GetValues<SortOrder>().Select(s => new KeyValuePair<SortOrder, string>(s, s.GetDisplayName())).ToList();
 
     public int SelectedCount => Items.Count(i => i.IsSelected);
-    public int FilesShown => ItemsView.Cast<object>().Count();
     public int ChangesCount => Items.Count(i => i.IsSelected &&
         !string.Equals(i.OriginalName, i.NewName, StringComparison.OrdinalIgnoreCase));
 
     public bool HasFiles => Items.Count > 0;
+
+    /// <summary>
+    /// Cancels any in-flight scan or rename. Renames stop at the next entry
+    /// boundary; everything completed before that point is journaled.
+    /// </summary>
+    public void RequestShutdown()
+    {
+        _scanCts?.Cancel();
+        _renameCts?.Cancel();
+    }
 
     /// <summary>History panel is active (nav item).</summary>
     public bool IsHistoryPanel => ActiveFilter == "History";
@@ -292,7 +365,9 @@ public class MainViewModel : INotifyPropertyChanged
         _ => new[] { "Document" }
     };
 
-    // ------------------------------------------------------------- commands
+
+    // COMMANDS
+    // Relay commands bound in XAML.
 
     public RelayCommand BrowseCommand { get; }
     public RelayCommand ScanCommand { get; }
@@ -304,8 +379,10 @@ public class MainViewModel : INotifyPropertyChanged
     public RelayCommand ToggleThemeCommand { get; }
     public RelayCommand SelectAllCommand { get; }
     public RelayCommand SelectNoneCommand { get; }
+    public RelayCommand CheckForUpdatesCommand { get; }
 
-    // ------------------------------------------------------------- scanning
+    // SCAN
+    // Scan orchestration, progress, cancellation.
 
     /// <summary>
     /// Entry point for folder drag-and-drop: sets the folder and scans.
@@ -332,7 +409,7 @@ public class MainViewModel : INotifyPropertyChanged
 
     private async Task ScanAsync()
     {
-        if (string.IsNullOrWhiteSpace(SelectedFolderPath) || !Directory.Exists(SelectedFolderPath))
+        if (IsBusy || string.IsNullOrWhiteSpace(SelectedFolderPath) || !Directory.Exists(SelectedFolderPath))
             return;
         IsBusy = true;
         ProgressPercent = 0;
@@ -388,17 +465,19 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    // ------------------------------------------------------------- naming
+    // NAME
+    // Name generation and regeneration.
 
     /// <summary>
-    /// Regenerates all names, updates the change/collision counts.
+    /// Regenerates all names, then re-plans in the background.
     /// </summary>
     private void RegenerateNames()
     {
         _nameGenerator.AssignNames(Items, SelectedNamingStyle, PreserveExtension);
-        RecalculateCounts();
+        BumpPlanGeneration();
         ItemsView.Refresh();
         OnPropertyChanged(nameof(ChangesCount));
+        _ = PlanInBackground();
     }
 
     /// <summary>
@@ -411,16 +490,18 @@ public class MainViewModel : INotifyPropertyChanged
         item.Purpose = newPurpose.Trim();
         if (item.Confidence == ClassificationConfidence.Strong)
             item.Confidence = ClassificationConfidence.Heuristic; // user-corrected
-        item.Signals.Add(new ClassificationSignal("Corrected by user", item.Purpose));
+        if (!item.Signals.Any(s => s.Label == "Corrected by user"))
+            item.Signals.Add(new ClassificationSignal("Corrected by user", item.Purpose));
 
         RegenerateNames();
         Log($"Purpose corrected: {item.OriginalName} -> {item.Purpose}");
     }
 
-    private void PreviewPlan()
+    private async Task PreviewPlan()
     {
-        var plan = _planner.Plan(Items.Where(i => i.IsSelected));
+        var plan = await PlanSelectedAsync();
         CollisionCount = plan.CollisionCount + plan.CycleCount;
+        ApplyPlan(plan);
 
         Log("--- PREVIEW (nothing will be changed) ---");
         foreach (var entry in plan.Entries)
@@ -444,11 +525,12 @@ public class MainViewModel : INotifyPropertyChanged
         Log($"--- {plan.ReadyCount} ready, {plan.CollisionCount} collisions, {plan.CycleCount} cycles ---");
     }
 
-    // ------------------------------------------------------------- renaming
+    // RENAME
+    // Execution and undo.
 
     private async Task RenameSelectedAsync()
     {
-        var plan = _planner.Plan(Items.Where(i => i.IsSelected));
+        var plan = await PlanSelectedAsync();
         CollisionCount = plan.CollisionCount + plan.CycleCount;
 
         if (plan.ReadyCount == 0)
@@ -496,7 +578,9 @@ public class MainViewModel : INotifyPropertyChanged
             CanUndo = _journal.CanUndo();
             LoadHistoryText();
 
-            if (result.Succeeded > 0)
+            // On cancellation the journal is already durable at the stop
+            // point; a full rescan would delay shutdown, so skip it.
+            if (result.Succeeded > 0 && !result.WasCancelled)
                 await RescanAfterChangeAsync();
         }
         finally
@@ -545,7 +629,61 @@ public class MainViewModel : INotifyPropertyChanged
             await ScanAsync();
     }
 
-    // ------------------------------------------------------------- history
+    // UPD
+    // Update discovery and status.
+
+    /// <summary>
+    /// Checks the configured manifest URL for updates. Never runs while a
+    /// scan or rename is active (the command is also disabled when busy):
+    /// update work is strictly serialized with file operations, and applying
+    /// anything remains a separate, user-confirmed step. See UPDATE_SYSTEM.md.
+    /// </summary>
+    private async Task CheckForUpdatesAsync()
+    {
+        if (IsBusy)
+            return;
+
+        if (string.IsNullOrWhiteSpace(UpdateManifestUrl))
+        {
+            UpdatesStatus = "Updates are disabled - no manifest URL configured.";
+            return;
+        }
+
+        if (!Uri.TryCreate(UpdateManifestUrl, UriKind.Absolute, out var url) ||
+            url.Scheme != Uri.UriSchemeHttps)
+        {
+            UpdatesStatus = "Update check failed: the manifest URL must be an HTTPS address.";
+            return;
+        }
+
+        IsBusy = true;
+        UpdatesStatus = "Checking for updates...";
+        try
+        {
+            var source = new HttpsManifestSource(url);
+            var manager = new UpdateManager(source, new UnverifiedSigner(), CurrentVersion);
+            var result = await manager.CheckForUpdatesAsync();
+
+            AvailableUpdates = new ObservableCollection<UpdateInfo>(result.Updates);
+            UpdatesStatus = !result.ManifestResult.IsValid
+                ? $"Update check failed: {result.ManifestResult.Reason}"
+                : result.IsAvailable
+                    ? $"{result.Updates.Count} update(s) available. Review them below - nothing is applied automatically."
+                    : "You are up to date.";
+        }
+        catch (Exception ex)
+        {
+            AvailableUpdates = new ObservableCollection<UpdateInfo>();
+            UpdatesStatus = $"Update check failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    // HISTORY
+    // Recent batch rendering.
 
     private void LoadHistoryText()
     {
@@ -572,7 +710,8 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    // ------------------------------------------------------------- filtering
+    // FILTER
+    // Search and category filters.
 
     private bool FilterItem(object obj)
     {
@@ -619,33 +758,94 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void SetAllSelection(bool selected)
     {
-        foreach (var item in ItemsView.Cast<FileClassification>())
-            item.IsSelected = selected;
+        _suppressItemEvents = true;
+        try
+        {
+            foreach (var item in ItemsView.Cast<FileClassification>())
+                item.IsSelected = selected;
+        }
+        finally
+        {
+            _suppressItemEvents = false;
+        }
 
         OnPropertyChanged(nameof(SelectedCount));
         OnPropertyChanged(nameof(ChangesCount));
-        RecalculateCounts();
+        BumpPlanGeneration();
+        _ = PlanInBackground();
+    }
+
+    // PLAN
+    // Background planning with stale-result rejection.
+
+    private void BumpPlanGeneration() => _planGeneration++;
+
+    private static FileClassification CloneForPlanning(FileClassification item) => new()
+    {
+        FullPath = item.FullPath,
+        OriginalName = item.OriginalName,
+        NewName = item.NewName,
+        Extension = item.Extension,
+        Kind = item.Kind,
+    };
+
+    /// <summary>
+    /// Plans the selected items on a background thread and applies the result
+    /// to the UI (collision tags, de-conflicted names, dock counters).
+    /// Discards the result when the underlying state changed meanwhile.
+    /// </summary>
+    private async Task PlanInBackground()
+    {
+        int generation = _planGeneration;
+        var snapshot = Items.Where(i => i.IsSelected).Select(CloneForPlanning).ToList();
+        var plan = await Task.Run(() => _planner.Plan(snapshot));
+        if (generation != _planGeneration)
+            return;
+        ApplyPlan(plan);
     }
 
     /// <summary>
-    /// Recalculates dock counters. Collision detection requires planning,
-    /// which is cheap (no disk writes).
+    /// Plans for an immediate operation (preview/rename), retrying if the
+    /// underlying state changed while planning ran in the background.
     /// </summary>
-    private void RecalculateCounts()
+    private async Task<RenamePlan> PlanSelectedAsync()
     {
-        var plan = _planner.Plan(Items.Where(i => i.IsSelected));
-        CollisionCount = plan.CollisionCount + plan.CycleCount;
+        while (true)
+        {
+            int generation = _planGeneration;
+            var snapshot = Items.Where(i => i.IsSelected).Select(CloneForPlanning).ToList();
+            var plan = await Task.Run(() => _planner.Plan(snapshot));
+            if (generation == _planGeneration)
+                return plan;
+        }
+    }
+
+    private void ApplyPlan(RenamePlan plan)
+    {
+        var byOldPath = Items.ToDictionary(i => i.FullPath, StringComparer.OrdinalIgnoreCase);
 
         foreach (var item in Items)
             item.Tag = null;
-        foreach (var entry in plan.Entries.Where(e => e.Status is RenamePlanStatus.Collision or RenamePlanStatus.Cycle))
-            entry.Item.Tag = "conflict";
 
+        foreach (var entry in plan.Entries)
+        {
+            if (!byOldPath.TryGetValue(entry.OldPath, out var real))
+                continue;
+
+            real.NewName = Path.GetFileName(entry.NewPath);
+
+            if (entry.Status is RenamePlanStatus.Collision or RenamePlanStatus.Cycle)
+                real.Tag = "conflict";
+        }
+
+        CollisionCount = plan.CollisionCount + plan.CycleCount;
         OnPropertyChanged(nameof(SelectedCount));
         OnPropertyChanged(nameof(ChangesCount));
+        ItemsView.Refresh();
     }
 
-    // ------------------------------------------------------------- helpers
+    // HELPERS
+    // Persistence, logging, dispatcher.
 
     private void Persist()
     {
@@ -656,6 +856,7 @@ public class MainViewModel : INotifyPropertyChanged
         _settings.PreserveExtension = PreserveExtension;
         _settings.NamingStyle = SelectedNamingStyle;
         _settings.SortOrder = SelectedSortOrder;
+        _settings.UpdateManifestUrl = UpdateManifestUrl;
         _settings.Save();
     }
 

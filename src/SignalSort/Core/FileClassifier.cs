@@ -70,10 +70,9 @@ public class FileClassifier
     /// <summary>
     /// Classifies an audio file based on duration, bitrate, and channel data.
     /// </summary>
-    public string ClassifyAudio(FileInfo file, List<ClassificationSignal> signals, out ClassificationConfidence confidence)
+    public string ClassifyAudio(MediaMetadata? metadata, List<ClassificationSignal> signals, out ClassificationConfidence confidence)
     {
         confidence = ClassificationConfidence.Unknown;
-        var metadata = _metadataReader.Read(file);
 
         if (metadata == null)
         {
@@ -111,10 +110,9 @@ public class FileClassifier
     /// <summary>
     /// Classifies a video file based on duration and resolution.
     /// </summary>
-    public string ClassifyVideo(FileInfo file, List<ClassificationSignal> signals, out ClassificationConfidence confidence)
+    public string ClassifyVideo(MediaMetadata? metadata, List<ClassificationSignal> signals, out ClassificationConfidence confidence)
     {
         confidence = ClassificationConfidence.Unknown;
-        var metadata = _metadataReader.Read(file);
 
         if (metadata == null)
         {
@@ -211,9 +209,9 @@ public class FileClassifier
 
     /// <summary>
     /// Classifies a single file, determining its category and purpose.
-    /// Signals and confidence describe the evidence behind the result.
+    /// Metadata is read once and returned so callers don't re-parse the file.
     /// </summary>
-    public (string Category, string Purpose, ClassificationConfidence Confidence, DateTime? DateTaken)
+    public (string Category, string Purpose, ClassificationConfidence Confidence, DateTime? DateTaken, MediaMetadata? Metadata)
         Classify(FileInfo file, List<ClassificationSignal> signals)
     {
         var category = DetectCategory(file);
@@ -223,28 +221,32 @@ public class FileClassifier
         {
             case "Audio":
             {
-                var purpose = ClassifyAudio(file, signals, out var confidence);
-                var taken = _metadataReader.Read(file)?.Duration != null ? (DateTime?)file.LastWriteTimeUtc : null;
-                return (category, purpose, confidence, taken);
+                var metadata = _metadataReader.Read(file);
+                var purpose = ClassifyAudio(metadata, signals, out var confidence);
+                var taken = metadata != null ? file.LastWriteTimeUtc : (DateTime?)null;
+                return (category, purpose, confidence, taken, metadata);
             }
             case "Video":
             {
-                var purpose = ClassifyVideo(file, signals, out var confidence);
-                var taken = file.LastWriteTimeUtc;
-                return (category, purpose, confidence, taken);
+                var metadata = _metadataReader.Read(file);
+                var purpose = ClassifyVideo(metadata, signals, out var confidence);
+                return (category, purpose, confidence, file.LastWriteTimeUtc, metadata);
             }
             case "Image":
-                return ClassifyImage(file, signals);
+            {
+                var (purpose, confidence, dateTaken) = ClassifyImage(file, signals);
+                return ("Image", purpose, confidence, dateTaken, null);
+            }
             case "Archive":
                 signals.Add(new ClassificationSignal("Contents", "Compressed archive"));
-                return (category, "Archive", ClassificationConfidence.Strong, null);
+                return (category, "Archive", ClassificationConfidence.Strong, null, null);
             default:
                 signals.Add(new ClassificationSignal("Type", "Document / other"));
-                return (category, "Document", ClassificationConfidence.Heuristic, null);
+                return (category, "Document", ClassificationConfidence.Heuristic, null, null);
         }
     }
 
-    private (string Category, string Purpose, ClassificationConfidence Confidence, DateTime? DateTaken)
+    private (string Purpose, ClassificationConfidence Confidence, DateTime? DateTaken)
         ClassifyImage(FileInfo file, List<ClassificationSignal> signals)
     {
         var dimensions = _metadataReader.ReadImageDimensions(file, signals, out var dateTaken);
@@ -258,10 +260,10 @@ public class FileClassifier
             // Dimension-based classification is more truthful than file size.
             var longestSide = Math.Max(dimensions.Value.Width, dimensions.Value.Height);
             if (longestSide <= 64)
-                return ("Image", "Icon", ClassificationConfidence.Strong, dateTaken);
+                return ("Icon", ClassificationConfidence.Strong, dateTaken);
             if (longestSide <= 256)
-                return ("Image", "Thumbnail", ClassificationConfidence.Strong, dateTaken);
-            return ("Image", "Photo", ClassificationConfidence.Heuristic, dateTaken);
+                return ("Thumbnail", ClassificationConfidence.Strong, dateTaken);
+            return ("Photo", ClassificationConfidence.Heuristic, dateTaken);
         }
 
         // Fall back to file size when dimensions are unavailable.
@@ -269,14 +271,14 @@ public class FileClassifier
         {
             var sizeKb = file.Length / 1024;
             if (sizeKb < 100)
-                return ("Image", "Thumbnail", ClassificationConfidence.Heuristic, dateTaken);
+                return ("Thumbnail", ClassificationConfidence.Heuristic, dateTaken);
             if (sizeKb < 1024)
-                return ("Image", "Icon", ClassificationConfidence.Heuristic, dateTaken);
-            return ("Image", "Photo", ClassificationConfidence.Heuristic, dateTaken);
+                return ("Icon", ClassificationConfidence.Heuristic, dateTaken);
+            return ("Photo", ClassificationConfidence.Heuristic, dateTaken);
         }
         catch
         {
-            return ("Image", "Image", ClassificationConfidence.Unknown, dateTaken);
+            return ("Image", ClassificationConfidence.Unknown, dateTaken);
         }
     }
 

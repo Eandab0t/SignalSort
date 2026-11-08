@@ -19,6 +19,9 @@ public class AppSettings
     public NamingStyle NamingStyle { get; set; } = NamingStyle.CategoryPrefixed;
     public SortOrder SortOrder { get; set; } = SortOrder.OriginalName;
 
+    /// <summary>HTTPS manifest URL for update checks. Empty disables checks.</summary>
+    public string UpdateManifestUrl { get; set; } = string.Empty;
+
     private static string DirectoryPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "SignalSort");

@@ -28,12 +28,10 @@ public class ScanProgress
 public class FileScanner
 {
     private readonly FileClassifier _classifier;
-    private readonly MetadataReader _metadataReader;
 
-    public FileScanner(FileClassifier classifier, MetadataReader metadataReader)
+    public FileScanner(FileClassifier classifier)
     {
         _classifier = classifier;
-        _metadataReader = metadataReader;
     }
 
     /// <summary>
@@ -135,12 +133,7 @@ public class FileScanner
     private FileClassification BuildFileClassification(FileInfo file)
     {
         var signals = new List<ClassificationSignal>();
-        var (category, purpose, confidence, dateTaken) = _classifier.Classify(file, signals);
-
-        // Read full metadata for media files so the inspector can show it.
-        MediaMetadata? metadata = null;
-        if (FileClassifier.IsMedia(file.Extension))
-            metadata = _metadataReader.Read(file);
+        var (category, purpose, confidence, dateTaken, metadata) = _classifier.Classify(file, signals);
 
         return new FileClassification
         {

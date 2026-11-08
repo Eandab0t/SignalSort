@@ -42,7 +42,7 @@
     <None Include="..\..\NOTICE" CopyToOutputDirectory="PreserveNewest" Link="licenses\NOTICE" />
     <None Include="..\..\THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest"
           Link="licenses\THIRD-PARTY-NOTICES.md" />
-    <None Include="..\..\docs\licensing\third-party\TagLibSharp-source-verification.txt"
+    <None Include="..\..\docs\public\licensing\third-party\TagLibSharp-source-verification.txt"
           CopyToOutputDirectory="PreserveNewest" Link="licenses\TagLibSharp-source-verification.txt" />
   </ItemGroup>
 

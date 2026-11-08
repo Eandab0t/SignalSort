@@ -20,6 +20,7 @@ public class NameGenerator
 {
     /// <summary>
     /// Assigns NewName to every item in the batch according to the style.
+    /// Items the user has manually renamed (NameEdited) keep their name.
     /// </summary>
     public void AssignNames(
         IEnumerable<FileClassification> items,
@@ -31,6 +32,9 @@ public class NameGenerator
 
         foreach (var item in items)
         {
+            if (item.NameEdited)
+                continue;
+
             var baseName = style switch
             {
                 NamingStyle.CategoryPrefixed => GeneratePrefixed(item, counters),

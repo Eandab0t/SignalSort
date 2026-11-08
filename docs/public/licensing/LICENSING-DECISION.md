@@ -163,7 +163,7 @@ consult an IP lawyer.
 
 ## 7. Once decided (mechanics)
 
-1. `Copy-Item docs/licensing/texts/<chosen>.txt LICENSE` and fill in the year/name (already filled: 2026 Ean).
+1. `Copy-Item docs/public/licensing/texts/<chosen>.txt LICENSE` and fill in the year/name (already filled: 2026 Ean).
 2. Commit: "Add LICENSE (Apache-2.0)".
 3. If PolyForm chosen instead: keep the `Required Notice: Copyright (c) 2026 Ean` line in LICENSE and README.
 4. Tag the release (`v0.3.0`) when publishing.

@@ -81,10 +81,12 @@ public class RenamePlanner
         // Pass 3: classify each entry.
         foreach (var entry in plan.Entries)
         {
+            // Only a byte-identical name is a no-op. A case-only rename
+            // (a.txt -> A.TXT) is a real change on Windows and is allowed.
             var sameName = string.Equals(
                 Path.GetFileName(entry.OldPath),
                 Path.GetFileName(entry.NewPath),
-                StringComparison.OrdinalIgnoreCase);
+                StringComparison.Ordinal);
 
             if (sameName)
             {

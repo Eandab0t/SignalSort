@@ -112,6 +112,12 @@ public class FileClassification : INotifyPropertyChanged
     public string? Tag { get; set; }
 
     /// <summary>
+    /// True once the user has manually edited the proposed name; regeneration
+    /// then leaves this item's name alone.
+    /// </summary>
+    public bool NameEdited { get; set; }
+
+    /// <summary>
     /// Whether this row is the one shown in the inspector.
     /// </summary>
     private bool _isSelectedForInspect;
